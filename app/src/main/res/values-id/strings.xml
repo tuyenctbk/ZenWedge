@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="appName">ZenWedge</string>
+    <string name="timerPreferences">Pengaturan Pengatur Waktu</string>
+    <string name="keepScreenOn">Layar Tetap Menyala</string>
+    <string name="keepScreenOnDesc">Cegah layar mati saat sesi fokus berjalan</string>
+    <string name="chimeTitle">Genta Mangkuk Bernyanyi Tibet</string>
+    <string name="chimeDesc">Bunyikan genta saat waktu fokus selesai</string>
+    <string name="hapticAlerts">Peringatan Getar Interval</string>
+    <string name="hapticAlertsDesc">Getaran lembut selama sesi fokus</string>
+    <string name="hapticOff">Mati</string>
+    <string name="haptic5m">Setiap 5m</string>
+    <string name="haptic10m">Setiap 10m</string>
+    <string name="dragInstruction">Geser lingkaran untuk mengatur waktu</string>
+    <string name="startFocus">MULAI FOKUS</string>
+    <string name="pauseFocus">JEDA FOKUS</string>
+    <string name="resumeFocus">LANJUTKAN</string>
+    <string name="hapticsEnabled">GETAR AKTIF</string>
+    <string name="hapticsMuted">GETAR DIBUNGKUM</string>
+    <string name="focusState">fokus</string>
+    <string name="pausedState">dijeda</string>
+    <string name="completedTitle">Zen</string>
+    <string name="completedSubtitle">kerja bagus</string>
+    <string name="minuteSingular">menit</string>
+    <string name="minutePlural">menit</string>
+    <string name="minSessionSuffix">menit sesi</string>
+    <string name="endsAtPrefix">Selesai pada</string>
+    <string name="languageSetting">Bahasa</string>
+    <string name="selectLanguage">Bahasa Aplikasi</string>
+    <string name="shareAppTitle">Share ZenWedge</string>
+    <string name="shareAppDesc">Invite friends to find their focus</string>
+    <string name="rateAppTitle">Enjoying ZenWedge?</string>
+    <string name="rateAppDesc">Please leave a 5-star review to support us</string>
+    <string name="updateAppTitle">Check for Updates</string>
+    <string name="updateAppDesc">Make sure you have the latest features</string>
+    <string name="shareDialogTitle">Spread the Zen</string>
+    <string name="shareDialogBody">You\'ve been focused! Share ZenWedge with friends and help them achieve their goals.</string>
+    <string name="shareButton">Share App</string>
+    <string name="rateDialogTitle">Are you enjoying ZenWedge?</string>
+    <string name="rateDialogBody">If this app is helping you focus, please consider leaving a 5-star rating. It helps a lot!</string>
+    <string name="rateButton">Rate 5 Stars</string>
+    <string name="updateDialogTitle">Update Available</string>
+    <string name="updateDialogBody">A new version of ZenWedge is available. Update now to get the latest features and improvements.</string>
+    <string name="updateButton">Update Now</string>
+    <string name="maybeLater">Maybe Later</string>
+</resources>

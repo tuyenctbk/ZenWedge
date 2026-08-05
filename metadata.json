@@ -1,0 +1,6 @@
+{
+  "name": "ZenWedge",
+  "description": "An ultra-minimalist visual countdown timer depicting time as a shrinking colored pie-wedge.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
