@@ -20,12 +20,10 @@ class MainActivity : ComponentActivity() {
     setContent {
       MyApplicationTheme {
         val timerViewModel: TimerViewModel = viewModel()
-        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-          ZenWedgeScreen(
-            viewModel = timerViewModel,
-            modifier = Modifier.padding(innerPadding)
-          )
-        }
+        ZenWedgeScreen(
+          viewModel = timerViewModel,
+          modifier = Modifier.fillMaxSize()
+        )
       }
     }
   }

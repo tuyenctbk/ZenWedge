@@ -2,7 +2,9 @@ package com.example.ui.timer
 
 import android.app.Activity
 import android.view.WindowManager
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -10,15 +12,21 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
@@ -45,6 +53,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -67,11 +76,15 @@ fun ZenWedgeScreen(
 ) {
         
         val context = LocalContext.current
+        val isOnboardingCompleted by viewModel.isOnboardingCompleted.collectAsState()
         val remainingSeconds by viewModel.remainingSeconds.collectAsState()
         val totalSeconds by viewModel.totalDurationSeconds.collectAsState()
         val timerState by viewModel.timerState.collectAsState()
         val theme by viewModel.currentTheme.collectAsState()
         val isKeepScreenOn by viewModel.isKeepScreenOn.collectAsState()
+        val hapticMode by viewModel.hapticMode.collectAsState()
+        val dynamicColorShiftEnabled by viewModel.dynamicColorShiftEnabled.collectAsState()
+        val roomSessions by viewModel.roomSessions.collectAsState()
         val intervalHapticMinutes by viewModel.intervalHapticMinutes.collectAsState()
         val playChime by viewModel.playChime.collectAsState()
         val selectedSoundId by viewModel.selectedSoundId.collectAsState()
@@ -80,13 +93,38 @@ fun ZenWedgeScreen(
         val showRatingDialog by viewModel.showRatingDialog.collectAsState()
         val showShareDialog by viewModel.showShareDialog.collectAsState()
         val showUpdateDialog by viewModel.showUpdateDialog.collectAsState()
+        val isDarkMode by viewModel.isDarkMode.collectAsState()
+        val sessionMode by viewModel.sessionMode.collectAsState()
+        val pomodoroCycle by viewModel.pomodoroCycle.collectAsState()
+        val quickPresets by viewModel.quickPresets.collectAsState()
 
         var showSettingsSheet by remember { mutableStateOf(false) }
         var showSessionsSheet by remember { mutableStateOf(false) }
+        var editingPresetIndex by remember { mutableStateOf<Int?>(null) }
+
+        val animatedBgColor by animateColorAsState(
+            targetValue = theme.getBgColor(isDarkMode),
+            animationSpec = tween(durationMillis = 600),
+            label = "backgroundColorFade"
+        )
+        val textColor = theme.getTextColor(isDarkMode)
+        val secondaryTextColor = theme.getSecondaryTextColor(isDarkMode)
 
         LaunchedEffect(Unit) {
             viewModel.initPreferences(context)
             AnalyticsTracker.trackScreen(context, "ZenWedge_Timer_Screen")
+        }
+
+        if (!isOnboardingCompleted) {
+            OnboardingScreen(
+                onFinished = {
+                    viewModel.setOnboardingCompleted(true, context)
+                },
+                isDarkMode = isDarkMode,
+                theme = theme,
+                modifier = Modifier.fillMaxSize()
+            )
+            return
         }
 
         // Screen tracking for settings sheet
@@ -96,30 +134,30 @@ fun ZenWedgeScreen(
             }
         }
 
-        // Keep screen on management
-        LaunchedEffect(isKeepScreenOn, timerState) {
+        // Keep screen on management via DisposableEffect to guarantee cleanup
+        DisposableEffect(isKeepScreenOn, timerState) {
             val activity = context as? Activity
-            if (activity != null) {
-                if (isKeepScreenOn && timerState == TimerState.RUNNING) {
-                    activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                } else {
-                    activity.window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                }
+            val shouldKeepOn = isKeepScreenOn && timerState == TimerState.RUNNING
+            if (activity != null && shouldKeepOn) {
+                activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            }
+            onDispose {
+                (context as? Activity)?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             }
         }
 
         // Handle side-effect haptic events from the ViewModel
-        LaunchedEffect(Unit) {
+        LaunchedEffect(hapticMode) {
             viewModel.hapticEvent.collect { event ->
                 when (event) {
-                    is TimerViewModel.HapticType.SlideTick -> {
-                        HapticHelper.triggerTick(context)
+                    is TimerViewModel.HapticType.SlideTick, is TimerViewModel.HapticType.ButtonClick -> {
+                        HapticHelper.triggerTick(context, hapticMode)
                     }
                     is TimerViewModel.HapticType.IntervalBump -> {
-                        HapticHelper.triggerIntervalBump(context)
+                        HapticHelper.triggerIntervalBump(context, hapticMode)
                     }
                     is TimerViewModel.HapticType.Completion -> {
-                        HapticHelper.triggerCompletionVibe(context)
+                        HapticHelper.triggerCompletionVibe(context, hapticMode)
                     }
                 }
             }
@@ -127,7 +165,7 @@ fun ZenWedgeScreen(
 
         Scaffold(
             modifier = modifier.fillMaxSize(),
-            containerColor = theme.backgroundColor,
+            containerColor = animatedBgColor,
             topBar = {
                 TopAppBar(
                     title = {
@@ -144,7 +182,7 @@ fun ZenWedgeScreen(
                                 text = stringResource(R.string.appName),
                                 style = MaterialTheme.typography.titleLarge.copy(
                                     fontWeight = FontWeight.Bold,
-                                    color = Color.White,
+                                    color = textColor,
                                     letterSpacing = (-0.5).sp
                                 )
                             )
@@ -155,25 +193,25 @@ fun ZenWedgeScreen(
                             onClick = { showSessionsSheet = true },
                             modifier = Modifier
                                 .testTag("sessions_button")
-                                .background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(12.dp))
+                                .background(if (isDarkMode) Color.White.copy(alpha = 0.05f) else Color.Black.copy(alpha = 0.05f), RoundedCornerShape(12.dp))
                         ) {
                             Icon(
                                 imageVector = Icons.Default.BarChart,
                                 contentDescription = "Sessions Stats",
-                                tint = Color.White.copy(alpha = 0.8f)
+                                tint = textColor
                             )
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
                         IconButton(
                             onClick = { showSettingsSheet = true },
                             modifier = Modifier
                                 .testTag("settings_button")
-                                .background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(12.dp))
+                                .background(if (isDarkMode) Color.White.copy(alpha = 0.05f) else Color.Black.copy(alpha = 0.05f), RoundedCornerShape(12.dp))
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Settings,
                                 contentDescription = "Settings",
-                                tint = Color.White.copy(alpha = 0.8f)
+                                tint = textColor
                             )
                         }
                     },
@@ -187,10 +225,53 @@ fun ZenWedgeScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(horizontal = 24.dp),
+                    .padding(horizontal = 20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
+                // Session Mode Selector Bar (Focus, Pomodoro, Short Break, Long Break)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp, bottom = 8.dp)
+                ) {
+                    SessionMode.entries.forEach { mode ->
+                        val isSelected = (sessionMode == mode)
+                        val badgeText = if (mode == SessionMode.POMODORO && isSelected) "Pomo #$pomodoroCycle" else mode.displayName
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(
+                                    if (isSelected) theme.wedgeColor else if (isDarkMode) Color.White.copy(alpha = 0.06f) else Color.Black.copy(alpha = 0.05f)
+                                )
+                                .border(
+                                    width = if (isSelected) 1.dp else 0.dp,
+                                    color = if (isSelected) Color.White.copy(alpha = 0.6f) else Color.Transparent,
+                                    shape = RoundedCornerShape(16.dp)
+                                )
+                                .clickable {
+                                    viewModel.emitButtonClickHaptic()
+                                    viewModel.setSessionMode(mode)
+                                }
+                                .padding(vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = badgeText,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    fontSize = 11.sp,
+                                    color = if (isSelected) Color.White else secondaryTextColor
+                                ),
+                                maxLines = 1
+                            )
+                        }
+                    }
+                }
+
                 // Main Timer Wedge Canvas Area
                 Box(
                     modifier = Modifier
@@ -203,6 +284,8 @@ fun ZenWedgeScreen(
                         totalSeconds = totalSeconds,
                         timerState = timerState,
                         theme = theme,
+                        isDarkMode = isDarkMode,
+                        isDynamicColorShift = dynamicColorShiftEnabled,
                         onAngleChanged = { angle ->
                             if (timerState == TimerState.IDLE || timerState == TimerState.COMPLETED) {
                                 val minutes = (angle / 360f * 60f).roundToInt().coerceIn(1, 60)
@@ -212,38 +295,46 @@ fun ZenWedgeScreen(
                     )
                 }
 
-                // Quick-select Duration Presets & Interactive helper label
+                // Quick-select Duration Presets with Long-Press Customization
                 if (timerState == TimerState.IDLE || timerState == TimerState.COMPLETED) {
-                    val presets = listOf(5, 10, 15, 25, 30, 45, 60)
                     val currentMins = (remainingSeconds / 60).coerceAtLeast(1)
 
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(bottom = 16.dp)
+                        modifier = Modifier.padding(bottom = 12.dp)
                     ) {
                         LazyRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            contentPadding = PaddingValues(horizontal = 16.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(bottom = 10.dp)
+                                .padding(bottom = 6.dp)
                         ) {
-                            items(presets) { mins ->
+                            itemsIndexed(quickPresets) { index, mins ->
                                 val isSelected = (currentMins == mins)
                                 Box(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(20.dp))
                                         .background(
-                                            if (isSelected) theme.wedgeColor else Color.White.copy(alpha = 0.08f)
+                                            if (isSelected) theme.wedgeColor else if (isDarkMode) Color.White.copy(alpha = 0.08f) else Color.Black.copy(alpha = 0.05f)
                                         )
                                         .border(
                                             width = if (isSelected) 1.5.dp else 1.dp,
-                                            color = if (isSelected) Color.White.copy(alpha = 0.8f) else Color.White.copy(alpha = 0.12f),
+                                            color = if (isSelected) textColor.copy(alpha = 0.8f) else secondaryTextColor.copy(alpha = 0.2f),
                                             shape = RoundedCornerShape(20.dp)
                                         )
-                                        .clickable {
-                                            viewModel.setDuration(mins * 60, isUserDrag = false)
+                                        .pointerInput(mins) {
+                                            detectTapGestures(
+                                                onTap = {
+                                                    viewModel.emitButtonClickHaptic()
+                                                    viewModel.setDuration(mins * 60, isUserDrag = false)
+                                                },
+                                                onLongPress = {
+                                                    viewModel.emitButtonClickHaptic()
+                                                    editingPresetIndex = index
+                                                }
+                                            )
                                         }
                                         .padding(horizontal = 16.dp, vertical = 8.dp)
                                         .testTag("preset_${mins}m"),
@@ -253,14 +344,22 @@ fun ZenWedgeScreen(
                                         text = "${mins}m",
                                         style = MaterialTheme.typography.labelLarge.copy(
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                            color = if (isSelected) Color.Black else Color.White.copy(alpha = 0.85f)
+                                            color = if (isSelected) Color.White else textColor
                                         )
                                     )
                                 }
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Tap preset to select • Long-press button to edit duration",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 10.sp,
+                                color = secondaryTextColor.copy(alpha = 0.8f),
+                                fontStyle = FontStyle.Italic
+                            ),
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
 
                         Column(
                             modifier = Modifier
@@ -277,7 +376,7 @@ fun ZenWedgeScreen(
                             ) {
                                 Text(
                                     text = stringResource(R.string.customDuration),
-                                    style = MaterialTheme.typography.bodySmall.copy(color = Color.White.copy(alpha = 0.6f))
+                                    style = MaterialTheme.typography.bodySmall.copy(color = secondaryTextColor)
                                 )
                                 Text(
                                     text = "$currentMins min${if (currentMins > 1) "s" else ""}",
@@ -287,29 +386,21 @@ fun ZenWedgeScreen(
                             Slider(
                                 value = currentMins.toFloat(),
                                 onValueChange = { newValue ->
-                                    viewModel.setDuration(newValue.toInt() * 60, isUserDrag = false)
+                                    val newMins = newValue.toInt()
+                                    if (newMins != currentMins) {
+                                        viewModel.setDuration(newMins * 60, isUserDrag = false)
+                                    }
                                 },
                                 valueRange = 1f..90f,
                                 steps = 89,
                                 colors = SliderDefaults.colors(
                                     thumbColor = theme.wedgeColor,
                                     activeTrackColor = theme.wedgeColor,
-                                    inactiveTrackColor = Color.White.copy(alpha = 0.1f)
+                                    inactiveTrackColor = if (isDarkMode) Color.White.copy(alpha = 0.1f) else Color.Black.copy(alpha = 0.1f)
                                 ),
                                 modifier = Modifier.testTag("custom_duration_slider")
                             )
                         }
-
-                        Spacer(modifier = Modifier.height(4.dp))
-
-                        Text(
-                            text = stringResource(R.string.dragInstruction),
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                color = Color.White.copy(alpha = 0.4f),
-                                fontStyle = FontStyle.Italic,
-                                fontFamily = FontFamily.Serif
-                            )
-                        )
                     }
                 } else {
                     Spacer(modifier = Modifier.height(24.dp))
@@ -328,7 +419,7 @@ fun ZenWedgeScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(bottom = 32.dp)
                     ) {
-                        WedgeTheme.values().forEach { wedgeTheme ->
+                        WedgeTheme.entries.forEach { wedgeTheme ->
                             val isSelected = theme == wedgeTheme
                             Box(
                                 modifier = Modifier
@@ -340,14 +431,17 @@ fun ZenWedgeScreen(
                                         color = if (isSelected) Color.White else Color.Transparent,
                                         shape = CircleShape
                                     )
-                                    .clickable { viewModel.selectTheme(wedgeTheme, context) },
+                                    .clickable {
+                                        viewModel.emitButtonClickHaptic()
+                                        viewModel.selectTheme(wedgeTheme, context)
+                                    },
                                 contentAlignment = Alignment.Center
                             ) {
                                 if (isSelected) {
                                     Icon(
                                         imageVector = Icons.Outlined.Check,
                                         contentDescription = "Selected",
-                                        tint = if (wedgeTheme == WedgeTheme.OLED_DARK) Color.Black else Color.White,
+                                        tint = Color.White,
                                         modifier = Modifier.size(16.dp)
                                     )
                                 }
@@ -371,8 +465,8 @@ fun ZenWedgeScreen(
                                 }
                             },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.White,
-                                contentColor = Color(0xFF121316)
+                                containerColor = theme.wedgeColor,
+                                contentColor = Color.White
                             ),
                             shape = RoundedCornerShape(28.dp),
                             modifier = Modifier
@@ -399,13 +493,13 @@ fun ZenWedgeScreen(
                             onClick = { viewModel.reset(context) },
                             modifier = Modifier
                                 .size(56.dp)
-                                .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(28.dp))
+                                .border(1.dp, secondaryTextColor.copy(alpha = 0.2f), RoundedCornerShape(28.dp))
                                 .testTag("reset_button")
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Refresh,
                                 contentDescription = "Reset Timer",
-                                tint = Color.White
+                                tint = textColor
                             )
                         }
                     }
@@ -414,7 +508,7 @@ fun ZenWedgeScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 24.dp),
+                            .padding(top = 16.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -426,14 +520,14 @@ fun ZenWedgeScreen(
                                 modifier = Modifier
                                     .size(6.dp)
                                     .background(
-                                        if (intervalHapticMinutes > 0) theme.wedgeColor else Color.White.copy(alpha = 0.2f),
+                                        if (intervalHapticMinutes > 0) theme.wedgeColor else secondaryTextColor.copy(alpha = 0.3f),
                                         CircleShape
                                     )
                             )
                             Text(
                                 text = if (intervalHapticMinutes > 0) stringResource(R.string.hapticsEnabled) else stringResource(R.string.hapticsMuted),
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    color = Color.White.copy(alpha = 0.3f),
+                                    color = secondaryTextColor,
                                     letterSpacing = 1.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -458,7 +552,7 @@ fun ZenWedgeScreen(
                         Text(
                             text = endTimeText,
                             style = MaterialTheme.typography.labelSmall.copy(
-                                color = Color.White.copy(alpha = 0.3f),
+                                color = secondaryTextColor,
                                 letterSpacing = 1.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -471,8 +565,8 @@ fun ZenWedgeScreen(
             if (showSettingsSheet) {
                 ModalBottomSheet(
                     onDismissRequest = { showSettingsSheet = false },
-                    containerColor = Color(0xFF1E1F22),
-                    contentColor = Color.White
+                    containerColor = if (isDarkMode) Color(0xFF1E1F22) else Color(0xFFF8FAFC),
+                    contentColor = textColor
                 ) {
                     Column(
                         modifier = Modifier
@@ -484,28 +578,73 @@ fun ZenWedgeScreen(
                             text = stringResource(R.string.timerPreferences),
                             style = MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = textColor
                             ),
-                            modifier = Modifier.padding(bottom = 24.dp)
+                            modifier = Modifier.padding(bottom = 20.dp)
                         )
 
+                        // Premium Dark/Light Mode Theme Row
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                                Text(
+                                    text = stringResource(R.string.darkThemeMode),
+                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                        fontWeight = FontWeight.Medium,
+                                        color = textColor
+                                    )
+                                )
+                                Text(
+                                    text = stringResource(R.string.darkThemeModeDesc),
+                                    style = MaterialTheme.typography.bodySmall.copy(color = secondaryTextColor)
+                                )
+                            }
+                            Switch(
+                                checked = isDarkMode,
+                                onCheckedChange = {
+                                    viewModel.emitButtonClickHaptic()
+                                    viewModel.toggleDarkMode(context)
+                                    AnalyticsTracker.logThemeChanged(context, if (isDarkMode) "Light" else "Dark")
+                                },
+                                modifier = Modifier.testTag("theme_toggle_button"),
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = theme.wedgeColor,
+                                    checkedTrackColor = theme.wedgeColor.copy(alpha = 0.4f),
+                                    uncheckedThumbColor = secondaryTextColor,
+                                    uncheckedTrackColor = secondaryTextColor.copy(alpha = 0.2f)
+                                )
+                            )
+                        }
+
+                        HorizontalDivider(
+                            color = if (isDarkMode) Color.White.copy(alpha = 0.08f) else Color.Black.copy(alpha = 0.08f),
+                            modifier = Modifier.padding(vertical = 6.dp)
+                        )
 
                         // Keep screen on config
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 12.dp),
+                                .padding(vertical = 10.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
                                 Text(
                                     text = stringResource(R.string.keepScreenOn),
-                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                        fontWeight = FontWeight.Medium,
+                                        color = textColor
+                                    )
                                 )
                                 Text(
                                     text = stringResource(R.string.keepScreenOnDesc),
-                                    style = MaterialTheme.typography.bodySmall.copy(color = Color.White.copy(alpha = 0.6f))
+                                    style = MaterialTheme.typography.bodySmall.copy(color = secondaryTextColor)
                                 )
                             }
                             Switch(
@@ -513,22 +652,119 @@ fun ZenWedgeScreen(
                                 onCheckedChange = { viewModel.setKeepScreenOn(it, context) },
                                 colors = SwitchDefaults.colors(
                                     checkedThumbColor = theme.wedgeColor,
-                                    checkedTrackColor = theme.wedgeColor.copy(alpha = 0.4f)
+                                    checkedTrackColor = theme.wedgeColor.copy(alpha = 0.4f),
+                                    uncheckedThumbColor = secondaryTextColor,
+                                    uncheckedTrackColor = secondaryTextColor.copy(alpha = 0.2f)
                                 )
                             )
                         }
 
-                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f), modifier = Modifier.padding(vertical = 8.dp))
+                        HorizontalDivider(
+                            color = if (isDarkMode) Color.White.copy(alpha = 0.08f) else Color.Black.copy(alpha = 0.08f),
+                            modifier = Modifier.padding(vertical = 6.dp)
+                        )
+
+                        // Dynamic Green-to-Red Color Shift Toggle
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                                Text(
+                                    text = stringResource(R.string.dynamicColorShift),
+                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                        fontWeight = FontWeight.Medium,
+                                        color = textColor
+                                    )
+                                )
+                                Text(
+                                    text = stringResource(R.string.dynamicColorShiftDesc),
+                                    style = MaterialTheme.typography.bodySmall.copy(color = secondaryTextColor)
+                                )
+                            }
+                            Switch(
+                                checked = dynamicColorShiftEnabled,
+                                onCheckedChange = { viewModel.setDynamicColorShift(it, context) },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = theme.wedgeColor,
+                                    checkedTrackColor = theme.wedgeColor.copy(alpha = 0.4f),
+                                    uncheckedThumbColor = secondaryTextColor,
+                                    uncheckedTrackColor = secondaryTextColor.copy(alpha = 0.2f)
+                                )
+                            )
+                        }
+
+                        HorizontalDivider(
+                            color = if (isDarkMode) Color.White.copy(alpha = 0.08f) else Color.Black.copy(alpha = 0.08f),
+                            modifier = Modifier.padding(vertical = 6.dp)
+                        )
+
+                        // Haptic Intensity Pattern Selector
+                        Column(modifier = Modifier.padding(vertical = 10.dp)) {
+                            Text(
+                                text = stringResource(R.string.completionHaptic),
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    color = textColor
+                                )
+                            )
+                            Text(
+                                text = stringResource(R.string.completionHapticDesc),
+                                style = MaterialTheme.typography.bodySmall.copy(color = secondaryTextColor),
+                                modifier = Modifier.padding(bottom = 10.dp)
+                            )
+
+                            val hapticOptions = listOf(
+                                "off" to stringResource(R.string.hapticMutedOption),
+                                "gentle" to stringResource(R.string.hapticGentleOption),
+                                "standard" to stringResource(R.string.hapticStandardOption),
+                                "strong" to stringResource(R.string.hapticStrongOption)
+                            )
+
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                items(hapticOptions) { (key, label) ->
+                                    val isSelected = hapticMode == key
+                                    FilterChip(
+                                        selected = isSelected,
+                                        onClick = {
+                                            viewModel.setHapticMode(key, context)
+                                            HapticHelper.triggerCompletionVibe(context, key)
+                                        },
+                                        label = { Text(label) },
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = theme.wedgeColor,
+                                            selectedLabelColor = if (isDarkMode) Color.Black else Color.White,
+                                            containerColor = if (isDarkMode) Color.White.copy(alpha = 0.05f) else Color.Black.copy(alpha = 0.05f),
+                                            labelColor = textColor
+                                        )
+                                    )
+                                }
+                            }
+                        }
+
+                        HorizontalDivider(
+                            color = if (isDarkMode) Color.White.copy(alpha = 0.08f) else Color.Black.copy(alpha = 0.08f),
+                            modifier = Modifier.padding(vertical = 6.dp)
+                        )
 
                         // Theme Selector
                         Column(modifier = Modifier.padding(vertical = 12.dp)) {
                             Text(
                                 text = stringResource(R.string.themeSelectorTitle),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    color = textColor
+                                )
                             )
                             Text(
-                                text = "Choose wedge color palette for your focus mood",
-                                style = MaterialTheme.typography.bodySmall.copy(color = Color.White.copy(alpha = 0.6f)),
+                                text = stringResource(R.string.chooseWedgePalette),
+                                style = MaterialTheme.typography.bodySmall.copy(color = secondaryTextColor),
                                 modifier = Modifier.padding(bottom = 12.dp)
                             )
 
@@ -541,10 +777,10 @@ fun ZenWedgeScreen(
                                     Box(
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(12.dp))
-                                            .background(if (isSelected) t.wedgeColor else Color.White.copy(alpha = 0.05f))
+                                            .background(if (isSelected) t.wedgeColor else (if (isDarkMode) Color.White.copy(alpha = 0.05f) else Color.Black.copy(alpha = 0.05f)))
                                             .border(
                                                 width = if (isSelected) 2.dp else 1.dp,
-                                                color = if (isSelected) Color.White else Color.White.copy(alpha = 0.15f),
+                                                color = if (isSelected) textColor else (if (isDarkMode) Color.White.copy(alpha = 0.15f) else Color.Black.copy(alpha = 0.15f)),
                                                 shape = RoundedCornerShape(12.dp)
                                             )
                                             .clickable {
@@ -567,7 +803,7 @@ fun ZenWedgeScreen(
                                                 text = t.themeName,
                                                 style = MaterialTheme.typography.labelMedium.copy(
                                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                                    color = if (isSelected) Color.Black else Color.White
+                                                    color = if (isSelected) (if (isDarkMode) Color.Black else Color.White) else textColor
                                                 )
                                             )
                                         }
@@ -576,7 +812,10 @@ fun ZenWedgeScreen(
                             }
                         }
 
-                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f), modifier = Modifier.padding(vertical = 8.dp))
+                        HorizontalDivider(
+                            color = if (isDarkMode) Color.White.copy(alpha = 0.08f) else Color.Black.copy(alpha = 0.08f),
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
 
                         // Singing bowl chime toggle
                         Row(
@@ -589,11 +828,14 @@ fun ZenWedgeScreen(
                             Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
                                 Text(
                                     text = stringResource(R.string.chimeTitle),
-                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                        fontWeight = FontWeight.Medium,
+                                        color = textColor
+                                    )
                                 )
                                 Text(
                                     text = stringResource(R.string.chimeDesc),
-                                    style = MaterialTheme.typography.bodySmall.copy(color = Color.White.copy(alpha = 0.6f))
+                                    style = MaterialTheme.typography.bodySmall.copy(color = secondaryTextColor)
                                 )
                             }
                             Switch(
@@ -601,7 +843,9 @@ fun ZenWedgeScreen(
                                 onCheckedChange = { viewModel.setPlayChime(it, context) },
                                 colors = SwitchDefaults.colors(
                                     checkedThumbColor = theme.wedgeColor,
-                                    checkedTrackColor = theme.wedgeColor.copy(alpha = 0.4f)
+                                    checkedTrackColor = theme.wedgeColor.copy(alpha = 0.4f),
+                                    uncheckedThumbColor = secondaryTextColor,
+                                    uncheckedTrackColor = secondaryTextColor.copy(alpha = 0.2f)
                                 )
                             )
                         }
@@ -609,17 +853,21 @@ fun ZenWedgeScreen(
                         if (playChime) {
                             Column(modifier = Modifier.padding(vertical = 8.dp)) {
                                 Text(
-                                    text = "Completion Chime Sound",
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold, color = Color.White.copy(alpha = 0.9f))
+                                    text = stringResource(R.string.completionChime),
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = textColor
+                                    )
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
 
                                 val soundOptions = listOf(
-                                    "tibetan_bowl" to "Tibetan Bowl",
-                                    "crystal_bowl" to "528Hz Crystal",
-                                    "soft_gong" to "Soft Gong",
-                                    "zen_bell" to "Zen Bell",
-                                    "raindrop_chime" to "Rain Chime"
+                                    "system_alarm" to stringResource(R.string.soundSystemAlarm),
+                                    "tibetan_bowl" to stringResource(R.string.soundTibetanBowl),
+                                    "crystal_bowl" to stringResource(R.string.soundCrystalBowl),
+                                    "soft_gong" to stringResource(R.string.soundSoftGong),
+                                    "zen_bell" to stringResource(R.string.soundZenBell),
+                                    "raindrop_chime" to stringResource(R.string.soundRaindropChime)
                                 )
 
                                 LazyRow(
@@ -631,8 +879,9 @@ fun ZenWedgeScreen(
                                         FilterChip(
                                             selected = isSelected,
                                             onClick = {
+                                                viewModel.emitButtonClickHaptic()
                                                 viewModel.selectSound(id, context)
-                                                viewModel.previewSound(id)
+                                                viewModel.previewSound(id, context)
                                             },
                                             label = {
                                                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -647,9 +896,9 @@ fun ZenWedgeScreen(
                                             },
                                             colors = FilterChipDefaults.filterChipColors(
                                                 selectedContainerColor = theme.wedgeColor,
-                                                selectedLabelColor = Color.Black,
-                                                containerColor = Color.White.copy(alpha = 0.05f),
-                                                labelColor = Color.White
+                                                selectedLabelColor = if (isDarkMode) Color.Black else Color.White,
+                                                containerColor = if (isDarkMode) Color.White.copy(alpha = 0.05f) else Color.Black.copy(alpha = 0.05f),
+                                                labelColor = textColor
                                             )
                                         )
                                     }
@@ -660,7 +909,7 @@ fun ZenWedgeScreen(
                                 // Gemini AI Sound Assistant Card
                                 Card(
                                     colors = CardDefaults.cardColors(
-                                        containerColor = Color.White.copy(alpha = 0.05f)
+                                        containerColor = if (isDarkMode) Color.White.copy(alpha = 0.05f) else Color.Black.copy(alpha = 0.05f)
                                     ),
                                     shape = RoundedCornerShape(16.dp),
                                     modifier = Modifier.fillMaxWidth()
@@ -680,9 +929,9 @@ fun ZenWedgeScreen(
                                                 )
                                                 Spacer(modifier = Modifier.width(6.dp))
                                                 Text(
-                                                    text = "AI Focus Sound Advisor",
+                                                    text = stringResource(R.string.aiFocusAdvisor),
                                                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                                    color = Color.White
+                                                    color = textColor
                                                 )
                                             }
 
@@ -691,7 +940,7 @@ fun ZenWedgeScreen(
                                                 enabled = !isAnalyzingPatterns,
                                                 colors = ButtonDefaults.buttonColors(
                                                     containerColor = theme.wedgeColor,
-                                                    contentColor = Color.Black
+                                                    contentColor = if (isDarkMode) Color.Black else Color.White
                                                 ),
                                                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
                                                 shape = RoundedCornerShape(10.dp)
@@ -699,44 +948,44 @@ fun ZenWedgeScreen(
                                                 if (isAnalyzingPatterns) {
                                                     CircularProgressIndicator(
                                                         modifier = Modifier.size(12.dp),
-                                                        color = Color.Black,
+                                                        color = if (isDarkMode) Color.Black else Color.White,
                                                         strokeWidth = 2.dp
                                                     )
                                                 } else {
-                                                    Text("Analyze", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
+                                                    Text(stringResource(R.string.analyze), style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
                                                 }
                                             }
                                         }
 
                                         Spacer(modifier = Modifier.height(6.dp))
                                         Text(
-                                            text = "Gemini analyzes your session duration and time-of-day history to recommend the optimal ambient chime.",
-                                            style = MaterialTheme.typography.bodySmall.copy(color = Color.White.copy(alpha = 0.6f), fontSize = 11.sp)
+                                            text = stringResource(R.string.aiFocusAdvisorDesc),
+                                            style = MaterialTheme.typography.bodySmall.copy(color = secondaryTextColor, fontSize = 11.sp)
                                         )
 
                                         aiRecommendation?.let { rec ->
                                             Spacer(modifier = Modifier.height(10.dp))
-                                            HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
+                                            HorizontalDivider(color = if (isDarkMode) Color.White.copy(alpha = 0.1f) else Color.Black.copy(alpha = 0.1f))
                                             Spacer(modifier = Modifier.height(10.dp))
 
                                             Text(
-                                                text = "Focus Pattern Insights",
+                                                text = stringResource(R.string.patternInsights),
                                                 style = MaterialTheme.typography.labelSmall.copy(color = theme.wedgeColor, fontWeight = FontWeight.Bold)
                                             )
                                             Text(
                                                 text = rec.patternAnalysis,
-                                                style = MaterialTheme.typography.bodySmall.copy(color = Color.White)
+                                                style = MaterialTheme.typography.bodySmall.copy(color = textColor)
                                             )
 
                                             Spacer(modifier = Modifier.height(6.dp))
 
                                             Text(
-                                                text = "Recommended: ${rec.soundName}",
+                                                text = stringResource(R.string.recommendedFormat, rec.soundName),
                                                 style = MaterialTheme.typography.labelSmall.copy(color = theme.wedgeColor, fontWeight = FontWeight.Bold)
                                             )
                                             Text(
                                                 text = rec.rationale,
-                                                style = MaterialTheme.typography.bodySmall.copy(color = Color.White.copy(alpha = 0.8f))
+                                                style = MaterialTheme.typography.bodySmall.copy(color = secondaryTextColor)
                                             )
 
                                             Spacer(modifier = Modifier.height(10.dp))
@@ -748,33 +997,37 @@ fun ZenWedgeScreen(
                                             ) {
                                                 Button(
                                                     onClick = {
+                                                        viewModel.emitButtonClickHaptic()
                                                         viewModel.selectSound(rec.recommendedSoundId, context)
-                                                        viewModel.previewSound(rec.recommendedSoundId)
+                                                        viewModel.previewSound(rec.recommendedSoundId, context)
                                                     },
                                                     colors = ButtonDefaults.buttonColors(
-                                                        containerColor = if (selectedSoundId == rec.recommendedSoundId) Color.White.copy(alpha = 0.2f) else theme.wedgeColor,
-                                                        contentColor = if (selectedSoundId == rec.recommendedSoundId) Color.White else Color.Black
+                                                        containerColor = if (selectedSoundId == rec.recommendedSoundId) (if (isDarkMode) Color.White.copy(alpha = 0.2f) else Color.Black.copy(alpha = 0.2f)) else theme.wedgeColor,
+                                                        contentColor = if (selectedSoundId == rec.recommendedSoundId) textColor else (if (isDarkMode) Color.Black else Color.White)
                                                     ),
                                                     modifier = Modifier.weight(1f),
                                                     shape = RoundedCornerShape(8.dp),
                                                     contentPadding = PaddingValues(vertical = 6.dp)
                                                 ) {
                                                     Text(
-                                                        if (selectedSoundId == rec.recommendedSoundId) "Selected" else "Apply Sound",
+                                                        if (selectedSoundId == rec.recommendedSoundId) stringResource(R.string.selected) else stringResource(R.string.applySound),
                                                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
                                                     )
                                                 }
 
                                                 IconButton(
-                                                    onClick = { viewModel.previewSound(rec.recommendedSoundId) },
+                                                    onClick = {
+                                                        viewModel.emitButtonClickHaptic()
+                                                        viewModel.previewSound(rec.recommendedSoundId, context)
+                                                    },
                                                     modifier = Modifier
                                                         .size(36.dp)
-                                                        .background(Color.White.copy(alpha = 0.1f), CircleShape)
+                                                        .background(if (isDarkMode) Color.White.copy(alpha = 0.1f) else Color.Black.copy(alpha = 0.1f), CircleShape)
                                                 ) {
                                                     Icon(
                                                         Icons.AutoMirrored.Filled.VolumeUp,
-                                                        contentDescription = "Preview recommended sound",
-                                                        tint = Color.White,
+                                                        contentDescription = stringResource(R.string.previewRecommendedSound),
+                                                        tint = textColor,
                                                         modifier = Modifier.size(18.dp)
                                                     )
                                                 }
@@ -785,24 +1038,30 @@ fun ZenWedgeScreen(
                             }
                         }
 
-                        HorizontalDivider(color = Color.White.copy(alpha = 0.08f), modifier = Modifier.padding(vertical = 8.dp))
+                        HorizontalDivider(
+                            color = if (isDarkMode) Color.White.copy(alpha = 0.08f) else Color.Black.copy(alpha = 0.08f),
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
 
                         // Interval haptic configurations
                         Column(modifier = Modifier.padding(vertical = 12.dp)) {
                             Text(
                                 text = stringResource(R.string.hapticAlerts),
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    color = textColor
+                                )
                             )
                             Text(
                                 text = stringResource(R.string.hapticAlertsDesc),
-                                style = MaterialTheme.typography.bodySmall.copy(color = Color.White.copy(alpha = 0.6f)),
+                                style = MaterialTheme.typography.bodySmall.copy(color = secondaryTextColor),
                                 modifier = Modifier.padding(bottom = 12.dp)
                             )
 
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 modifier = Modifier.fillMaxWidth()
-                            ) {
+                             ) {
                                 listOf(
                                     0 to stringResource(R.string.hapticOff),
                                     5 to stringResource(R.string.haptic5m),
@@ -812,8 +1071,8 @@ fun ZenWedgeScreen(
                                     Button(
                                         onClick = { viewModel.setIntervalHaptic(mins, context) },
                                         colors = ButtonDefaults.buttonColors(
-                                            containerColor = if (isSelected) theme.wedgeColor else Color.White.copy(alpha = 0.05f),
-                                            contentColor = if (isSelected) Color.Black else Color.White
+                                            containerColor = if (isSelected) theme.wedgeColor else (if (isDarkMode) Color.White.copy(alpha = 0.05f) else Color.Black.copy(alpha = 0.05f)),
+                                            contentColor = if (isSelected) (if (isDarkMode) Color.Black else Color.White) else textColor
                                         ),
                                         shape = RoundedCornerShape(12.dp),
                                         modifier = Modifier.weight(1f)
@@ -832,106 +1091,42 @@ fun ZenWedgeScreen(
             }
         }
 
-            // Modal Sessions View Sheet
+            // Quick Preset Edit Dialog
+            editingPresetIndex?.let { index ->
+                if (index in quickPresets.indices) {
+                    EditPresetDialog(
+                        initialMins = quickPresets[index],
+                        theme = theme,
+                        isDarkMode = isDarkMode,
+                        onDismiss = { editingPresetIndex = null },
+                        onSave = { newMins ->
+                            viewModel.updatePreset(index, newMins, context)
+                        }
+                    )
+                }
+            }
+
+            // Modal Sessions View Sheet with Summary Dashboard
             if (showSessionsSheet) {
                 ModalBottomSheet(
                     onDismissRequest = { showSessionsSheet = false },
-                    containerColor = Color(0xFF1E1F22),
-                    contentColor = Color.White
+                    containerColor = if (isDarkMode) Color(0xFF1E1F22) else Color(0xFFF8FAFC),
+                    contentColor = textColor
                 ) {
-                    val sessionCount = AppPreferences.getSessionCount(context)
-                    val totalMinutes = AppPreferences.getTotalFocusMinutes(context)
-                    val hours = totalMinutes / 60
-                    val mins = totalMinutes % 60
-                    val historySummary = AppPreferences.getRecentSessionsSummary(context)
-
-                    Column(
+                    LazyColumn(
                         modifier = Modifier
                             .fillMaxWidth()
                             .navigationBarsPadding()
-                            .padding(24.dp)
+                            .padding(horizontal = 20.dp, vertical = 16.dp)
                     ) {
-                        Text(
-                            text = stringResource(R.string.sessionsTitle),
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            ),
-                            modifier = Modifier.padding(bottom = 20.dp)
-                        )
-
-                        // Stats Cards Row
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Card(
-                                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
-                                shape = RoundedCornerShape(16.dp),
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(16.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text(
-                                        text = "$sessionCount",
-                                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold, color = theme.wedgeColor)
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = stringResource(R.string.totalSessions),
-                                        style = MaterialTheme.typography.bodySmall.copy(color = Color.White.copy(alpha = 0.6f)),
-                                        textAlign = TextAlign.Center
-                                    )
-                                }
-                            }
-
-                            Card(
-                                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
-                                shape = RoundedCornerShape(16.dp),
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(16.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text(
-                                        text = if (hours > 0) "${hours}h ${mins}m" else "${mins}m",
-                                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold, color = theme.wedgeColor)
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = stringResource(R.string.totalFocusTime),
-                                        style = MaterialTheme.typography.bodySmall.copy(color = Color.White.copy(alpha = 0.6f)),
-                                        textAlign = TextAlign.Center
-                                    )
-                                }
-                            }
+                        item {
+                            SummaryDashboard(
+                                sessions = roomSessions,
+                                theme = theme,
+                                isDarkMode = isDarkMode,
+                                modifier = Modifier.fillMaxWidth()
+                            )
                         }
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        Text(
-                            text = stringResource(R.string.recentHistory),
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = Color.White),
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-
-                        Card(
-                            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text(
-                                    text = historySummary.ifEmpty { "No completed sessions yet. Start your first ZenWedge session!" },
-                                    style = MaterialTheme.typography.bodyMedium.copy(color = Color.White.copy(alpha = 0.8f))
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(24.dp))
                     }
                 }
             }
@@ -943,13 +1138,17 @@ fun ZenWedgeScreen(
                 text = { Text(stringResource(R.string.shareDialogBody)) },
                 confirmButton = {
                     TextButton(onClick = {
-                        val sendIntent = android.content.Intent().apply {
-                            action = android.content.Intent.ACTION_SEND
-                            putExtra(android.content.Intent.EXTRA_TEXT, "I use ZenWedge to stay focused! Try it out.")
-                            type = "text/plain"
+                        try {
+                            val sendIntent = android.content.Intent().apply {
+                                action = android.content.Intent.ACTION_SEND
+                                putExtra(android.content.Intent.EXTRA_TEXT, "I use ZenWedge to stay focused! Try it out.")
+                                type = "text/plain"
+                            }
+                            val shareIntent = android.content.Intent.createChooser(sendIntent, null)
+                            context.startActivity(shareIntent)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
                         }
-                        val shareIntent = android.content.Intent.createChooser(sendIntent, null)
-                        context.startActivity(shareIntent)
                         viewModel.dismissShareDialog(context, true)
                     }) {
                         Text(stringResource(R.string.shareButton), color = theme.wedgeColor)
@@ -957,12 +1156,12 @@ fun ZenWedgeScreen(
                 },
                 dismissButton = {
                     TextButton(onClick = { viewModel.dismissShareDialog() }) {
-                        Text(stringResource(R.string.maybeLater), color = Color.White.copy(alpha = 0.6f))
+                        Text(stringResource(R.string.maybeLater), color = secondaryTextColor)
                     }
                 },
-                containerColor = Color(0xFF1E1F22),
-                titleContentColor = Color.White,
-                textContentColor = Color.White.copy(alpha = 0.8f)
+                containerColor = if (isDarkMode) Color(0xFF1E1F22) else Color(0xFFF8FAFC),
+                titleContentColor = textColor,
+                textContentColor = secondaryTextColor
             )
         }
         
@@ -985,12 +1184,12 @@ fun ZenWedgeScreen(
                 },
                 dismissButton = {
                     TextButton(onClick = { viewModel.dismissRatingDialog() }) {
-                        Text(stringResource(R.string.maybeLater), color = Color.White.copy(alpha = 0.6f))
+                        Text(stringResource(R.string.maybeLater), color = secondaryTextColor)
                     }
                 },
-                containerColor = Color(0xFF1E1F22),
-                titleContentColor = Color.White,
-                textContentColor = Color.White.copy(alpha = 0.8f)
+                containerColor = if (isDarkMode) Color(0xFF1E1F22) else Color(0xFFF8FAFC),
+                titleContentColor = textColor,
+                textContentColor = secondaryTextColor
             )
         }
         
@@ -1013,12 +1212,12 @@ fun ZenWedgeScreen(
                 },
                 dismissButton = {
                     TextButton(onClick = { viewModel.dismissUpdateDialog() }) {
-                        Text(stringResource(R.string.maybeLater), color = Color.White.copy(alpha = 0.6f))
+                        Text(stringResource(R.string.maybeLater), color = secondaryTextColor)
                     }
                 },
-                containerColor = Color(0xFF1E1F22),
-                titleContentColor = Color.White,
-                textContentColor = Color.White.copy(alpha = 0.8f)
+                containerColor = if (isDarkMode) Color(0xFF1E1F22) else Color(0xFFF8FAFC),
+                titleContentColor = textColor,
+                textContentColor = secondaryTextColor
             )
         }
 }
@@ -1029,12 +1228,11 @@ fun WedgeDial(
     totalSeconds: Int,
     timerState: TimerState,
     theme: WedgeTheme,
+    isDarkMode: Boolean = true,
+    isDynamicColorShift: Boolean = true,
     onAngleChanged: (Float) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    
-
-    // Elegant radial pie-wedge countdown dial
     val displayMin = remainingSeconds / 60
     val displaySec = remainingSeconds % 60
 
@@ -1048,6 +1246,43 @@ fun WedgeDial(
         targetValue = targetFraction,
         label = "wedgeFractionAnimation"
     )
+
+    // Calculate dynamic wedge color interpolating smoothly from Green -> Yellow -> Red as remaining fraction drops
+    val rawWedgeColor = if (isDynamicColorShift && (timerState == TimerState.RUNNING || timerState == TimerState.PAUSED)) {
+        val green = Color(0xFF4CAF50)
+        val yellow = Color(0xFFFFC107)
+        val red = Color(0xFFE53935)
+        if (animatedFraction >= 0.5f) {
+            val t = (1.0f - animatedFraction) * 2f
+            androidx.compose.ui.graphics.lerp(green, yellow, t.coerceIn(0f, 1f))
+        } else {
+            val t = (0.5f - animatedFraction) * 2f
+            androidx.compose.ui.graphics.lerp(yellow, red, t.coerceIn(0f, 1f))
+        }
+    } else {
+        theme.wedgeColor
+    }
+
+    val activeWedgeColor by animateColorAsState(
+        targetValue = rawWedgeColor,
+        animationSpec = tween(durationMillis = 600),
+        label = "wedgeColorFade"
+    )
+
+    val dialBgColor by animateColorAsState(
+        targetValue = theme.getDialBg(isDarkMode),
+        animationSpec = tween(600),
+        label = "dialBgFade"
+    )
+
+    val hubBgColor by animateColorAsState(
+        targetValue = theme.getBgColor(isDarkMode),
+        animationSpec = tween(600),
+        label = "hubBgFade"
+    )
+
+    val textColor = theme.getTextColor(isDarkMode)
+    val secondaryTextColor = theme.getSecondaryTextColor(isDarkMode)
 
     Box(
         modifier = modifier
@@ -1091,22 +1326,21 @@ fun WedgeDial(
 
             // Outer ring border decoration
             drawCircle(
-                color = Color.White.copy(alpha = 0.05f),
+                color = if (isDarkMode) Color.White.copy(alpha = 0.05f) else Color.Black.copy(alpha = 0.05f),
                 radius = radius,
                 style = Stroke(width = 1.dp.toPx())
             )
 
             // Draw circular dial background
             drawCircle(
-                color = theme.dialBackground,
+                color = dialBgColor,
                 radius = radius * 0.98f
             )
 
             // Draw full wedge / dynamic remaining colored arc
-            // The wedge sweeps clockwise starting from 12 o'clock (-90 degrees)
             val sweepAngle = animatedFraction * 360f
             drawArc(
-                color = theme.wedgeColor.copy(alpha = 0.88f),
+                color = activeWedgeColor.copy(alpha = 0.88f),
                 startAngle = -90f,
                 sweepAngle = sweepAngle,
                 useCenter = true,
@@ -1117,31 +1351,32 @@ fun WedgeDial(
             // Minimalist dial markers (ticks) at 12, 3, 6, 9 o'clock
             val tickLength = 10.dp.toPx()
             val tickStroke = 2.dp.toPx()
+            val tickColor = if (isDarkMode) Color.White.copy(alpha = 0.3f) else Color.Black.copy(alpha = 0.3f)
 
             // 12 o'clock
             drawLine(
-                color = Color.White.copy(alpha = 0.4f),
+                color = tickColor,
                 start = Offset(center.x, center.y - radius + 8.dp.toPx()),
                 end = Offset(center.x, center.y - radius + 8.dp.toPx() + tickLength),
                 strokeWidth = tickStroke
             )
             // 3 o'clock
             drawLine(
-                color = Color.White.copy(alpha = 0.15f),
+                color = tickColor.copy(alpha = 0.15f),
                 start = Offset(center.x + radius - 8.dp.toPx() - tickLength, center.y),
                 end = Offset(center.x + radius - 8.dp.toPx(), center.y),
                 strokeWidth = tickStroke
             )
             // 6 o'clock
             drawLine(
-                color = Color.White.copy(alpha = 0.15f),
+                color = tickColor.copy(alpha = 0.15f),
                 start = Offset(center.x, center.y + radius - 8.dp.toPx() - tickLength),
                 end = Offset(center.x, center.y + radius - 8.dp.toPx()),
                 strokeWidth = tickStroke
             )
             // 9 o'clock
             drawLine(
-                color = Color.White.copy(alpha = 0.15f),
+                color = tickColor.copy(alpha = 0.15f),
                 start = Offset(center.x - radius + 8.dp.toPx(), center.y),
                 end = Offset(center.x - radius + 8.dp.toPx() + tickLength, center.y),
                 strokeWidth = tickStroke
@@ -1153,7 +1388,7 @@ fun WedgeDial(
             modifier = Modifier
                 .fillMaxSize(0.72f)
                 .clip(CircleShape)
-                .background(theme.backgroundColor)
+                .background(hubBgColor)
                 .shadow(elevation = 12.dp, shape = CircleShape),
             contentAlignment = Alignment.Center
         ) {
@@ -1167,7 +1402,7 @@ fun WedgeDial(
                         text = String.format(Locale.getDefault(), "%02d:%02d", displayMin, displaySec),
                         style = MaterialTheme.typography.displayMedium.copy(
                             fontWeight = FontWeight.Light,
-                            color = Color.White,
+                            color = textColor,
                             letterSpacing = (-1.5).sp
                         )
                     )
@@ -1191,7 +1426,7 @@ fun WedgeDial(
                     Text(
                         text = stringResource(R.string.completedSubtitle),
                         style = MaterialTheme.typography.labelSmall.copy(
-                            color = Color.White.copy(alpha = 0.5f),
+                            color = secondaryTextColor,
                             fontWeight = FontWeight.Medium,
                             letterSpacing = 1.sp
                         )
@@ -1203,14 +1438,14 @@ fun WedgeDial(
                         style = MaterialTheme.typography.displayLarge.copy(
                             fontSize = 64.sp,
                             fontWeight = FontWeight.Light,
-                            color = Color.White,
+                            color = textColor,
                             letterSpacing = (-2).sp
                         )
                     )
                     Text(
                         text = if (displayMin == 1) stringResource(R.string.minuteSingular) else stringResource(R.string.minutePlural),
                         style = MaterialTheme.typography.labelMedium.copy(
-                            color = Color.White.copy(alpha = 0.4f),
+                            color = secondaryTextColor,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 2.sp
                         )
@@ -1219,4 +1454,78 @@ fun WedgeDial(
             }
         }
     }
+}
+
+@Composable
+fun EditPresetDialog(
+    initialMins: Int,
+    theme: WedgeTheme,
+    isDarkMode: Boolean,
+    onDismiss: () -> Unit,
+    onSave: (Int) -> Unit
+) {
+    var textValue by remember { mutableStateOf(initialMins.toString()) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    val enterValueErrorStr = stringResource(R.string.enterValueBetween)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = stringResource(R.string.editQuickPreset),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+            )
+        },
+        text = {
+            Column {
+                Text(
+                    text = stringResource(R.string.enterDurationMinutes),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = theme.getSecondaryTextColor(isDarkMode),
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+                OutlinedTextField(
+                    value = textValue,
+                    onValueChange = { input ->
+                        textValue = input.filter { it.isDigit() }
+                        errorMessage = null
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    isError = errorMessage != null,
+                    supportingText = {
+                        errorMessage?.let { msg ->
+                            Text(text = msg, color = MaterialTheme.colorScheme.error)
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("edit_preset_textfield")
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val parsed = textValue.toIntOrNull()
+                    if (parsed != null && parsed in 1..180) {
+                        onSave(parsed)
+                        onDismiss()
+                    } else {
+                        errorMessage = enterValueErrorStr
+                    }
+                }
+            ) {
+                Text(stringResource(R.string.save), color = theme.wedgeColor, fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel), color = theme.getSecondaryTextColor(isDarkMode))
+            }
+        },
+        containerColor = if (isDarkMode) Color(0xFF1E1F22) else Color(0xFFF8FAFC),
+        titleContentColor = theme.getTextColor(isDarkMode),
+        textContentColor = theme.getTextColor(isDarkMode)
+    )
 }

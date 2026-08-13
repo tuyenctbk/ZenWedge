@@ -49,5 +49,93 @@
     <string name="recentHistory">Recent Sessions</string>
     <string name="customDuration">Custom Duration</string>
     <string name="themeSelectorTitle">Wedge Color Theme</string>
+
+    <!-- New theme configurations -->
+    <string name="darkThemeMode">Dark Theme Mode</string>
+    <string name="darkThemeModeDesc">Switch between night dark focus mode or day light focus mode</string>
+    <string name="dynamicColorShift">Dynamic Color Shift (Green to Red)</string>
+    <string name="dynamicColorShiftDesc">Wedge smoothly transitions Green → Yellow → Red as remaining time decreases</string>
+    <string name="completionHaptic">Completion Haptic Pattern</string>
+    <string name="completionHapticDesc">Select vibration intensity &amp; rhythm pattern for countdown completion</string>
+    <string name="chooseWedgePalette">Choose wedge color palette for your focus mood</string>
+    <string name="completionChime">Completion Chime Sound</string>
+
+    <!-- AI advisor -->
+    <string name="aiFocusAdvisor">AI Focus Sound Advisor</string>
+    <string name="analyze">Analyze</string>
+    <string name="aiFocusAdvisorDesc">Gemini analyzes your session duration and history to recommend the optimal ambient chime.</string>
+    <string name="patternInsights">Focus Pattern Insights</string>
+    <string name="recommendedFormat">Recommended: %1$s</string>
+    <string name="selected">Selected</string>
+    <string name="applySound">Apply Sound</string>
+    <string name="previewRecommendedSound">Preview recommended sound</string>
+
+    <!-- Custom timer dialogue -->
+    <string name="editQuickPreset">Edit Quick Preset</string>
+    <string name="enterDurationMinutes">Enter duration in minutes (1 - 180):</string>
+    <string name="enterValueBetween">Please enter a value between 1 and 180</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+
+    <!-- Dashboard stats -->
+    <string name="focusSummaryDashboard">Focus Summary Dashboard</string>
+    <string name="daily">Daily</string>
+    <string name="weekly">Weekly</string>
+    <string name="past4Weeks">Past 4 Weeks Focus Time (Mins)</string>
+    <string name="dailyFocusBreakdown">Daily Focus Breakdown (Mins)</string>
+    <string name="roomDbSessionLogs">Room DB Session Logs (%1$d)</string>
+    <string name="exportCsv">Export CSV</string>
+    <string name="noSessionsLogged">No Room DB sessions logged yet. Complete a timer session to track focus duration history!</string>
+    <string name="kpiTotalTime">Total Time</string>
+    <string name="kpiSessions">Sessions</string>
+    <string name="kpiAvgSession">Avg Session</string>
+    <string name="completedSuffixFormat">%1$d completed</string>
+
+    <!-- Week labels -->
+    <string name="wk1">Wk 1</string>
+    <string name="wk2">Wk 2</string>
+    <string name="wk3">Wk 3</string>
+    <string name="thisWk">This Wk</string>
+
+    <!-- Day labels -->
+    <string name="mon">Mon</string>
+    <string name="tue">Tue</string>
+    <string name="wed">Wed</string>
+    <string name="thu">Thu</string>
+    <string name="fri">Fri</string>
+    <string name="sat">Sat</string>
+    <string name="sun">Sun</string>
+
+    <!-- Haptic selector options -->
+    <string name="hapticMutedOption">Muted</string>
+    <string name="hapticGentleOption">Gentle Pulse</string>
+    <string name="hapticStandardOption">Standard Rhythm</string>
+    <string name="hapticStrongOption">Strong Wave</string>
+
+    <!-- Chime sound options -->
+    <string name="soundSystemAlarm">System Alarm</string>
+    <string name="soundTibetanBowl">Tibetan Bowl</string>
+    <string name="soundCrystalBowl">528Hz Crystal</string>
+    <string name="soundSoftGong">Soft Gong</string>
+    <string name="soundZenBell">Zen Bell</string>
+    <string name="soundRaindropChime">Rain Chime</string>
+
+    <!-- Onboarding strings -->
+    <string name="onboardingWelcomeTitle">Welcome to ZenWedge</string>
+    <string name="onboardingWelcomeDesc">ZenWedge is an elegant, sensory-rich countdown timer designed to help you cultivate deep, distraction-free focus.</string>
+    <string name="onboardingSlide1Feature">Tactile Time Adjustment</string>
+    <string name="onboardingSlide1FeatureDesc">Slide the smooth mechanical wedge to configure your focus sessions. Experience fluid analog physics and soft ambient ticks.</string>
+    <string name="onboardingSoundsTitle">Sensory Soundscapes</string>
+    <string name="onboardingSoundsDesc">Immerse yourself in high-fidelity ambient resonance designed to synchronize your neural frequency.</string>
+    <string name="onboardingSlide2Feature">Therapeutic Chimes &amp; Gemini AI</string>
+    <string name="onboardingSlide2FeatureDesc">Soothe your entry and exit with authentic singing bowls, gongs, or let Gemini analyze your session history to recommend the optimal chime.</string>
+    <string name="onboardingStatsTitle">Analytics &amp; Customization</string>
+    <string name="onboardingStatsDesc">Monitor your attention trends with local Room database tracking and full theme personalization settings.</string>
+    <string name="onboardingSlide3Feature">Rich Historical Insights</string>
+    <string name="onboardingSlide3FeatureDesc">Review focus trends, export CSV session logs, and fine-tune interval alerts, custom vibrations, or dark theme palette mode.</string>
+    <string name="onboardingNext">Next</string>
+    <string name="onboardingBack">Back</string>
+    <string name="onboardingGetStarted">Start Focusing</string>
+
     <string name="app_name" translatable="false">ZenWedge</string>
 </resources>

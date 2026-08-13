@@ -12,10 +12,30 @@ import kotlin.math.sin
 object ChimeSynthesizer {
     private const val SAMPLE_RATE = 22050
 
+    @Volatile
+    private var currentTrack: AudioTrack? = null
+
+    fun stop() {
+        try {
+            currentTrack?.let { track ->
+                if (track.playState == AudioTrack.PLAYSTATE_PLAYING) {
+                    track.stop()
+                }
+                track.release()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        } finally {
+            currentTrack = null
+        }
+    }
+
     suspend fun playTibetanSingingBowl() = playSoundById("tibetan_bowl")
 
     suspend fun playSoundById(soundId: String) = withContext(Dispatchers.Default) {
         try {
+            stop()
+
             val durationSeconds = when (soundId) {
                 "soft_gong" -> 4.5f
                 "crystal_bowl" -> 4.0f
@@ -61,14 +81,16 @@ object ChimeSynthesizer {
                 .setTransferMode(AudioTrack.MODE_STATIC)
                 .build()
 
+            currentTrack = audioTrack
             audioTrack.write(samples, 0, samples.size)
             audioTrack.play()
 
             val sleepTimeMs = (durationSeconds * 1000).toLong()
             kotlinx.coroutines.delay(sleepTimeMs)
 
-            audioTrack.stop()
-            audioTrack.release()
+            if (currentTrack == audioTrack) {
+                stop()
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }

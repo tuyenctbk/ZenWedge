@@ -8,23 +8,55 @@ import android.os.VibratorManager
 
 object HapticHelper {
     
-    // Light tick for slider drag (feels like a physical clock dial clicking)
-    fun triggerTick(context: Context) {
-        vibrate(context, 12L, 50)
+    // Light tick for slider drag or button interaction
+    fun triggerTick(context: Context, mode: String = "standard") {
+        if (mode == "off") return
+        val amp = when (mode) {
+            "gentle" -> 25
+            "strong" -> 100
+            else -> 50
+        }
+        vibrate(context, 12L, amp)
     }
 
     // Medium bump for interval milestones (e.g. 5 min haptic)
-    fun triggerIntervalBump(context: Context) {
-        vibrate(context, 40L, 120)
+    fun triggerIntervalBump(context: Context, mode: String = "standard") {
+        if (mode == "off") return
+        val amp = when (mode) {
+            "gentle" -> 60
+            "strong" -> 200
+            else -> 120
+        }
+        vibrate(context, 40L, amp)
     }
 
-    // Rich pulsating vibration for completion
-    fun triggerCompletionVibe(context: Context) {
-        vibratePattern(
-            context,
-            timings = longArrayOf(0, 150, 100, 150, 100, 300),
-            amplitudes = intArrayOf(0, 100, 0, 150, 0, 200)
-        )
+    // Rich pulsating vibration for completion depending on pattern preference
+    fun triggerCompletionVibe(context: Context, mode: String = "standard") {
+        if (mode == "off") return
+        when (mode) {
+            "gentle" -> {
+                vibratePattern(
+                    context,
+                    timings = longArrayOf(0, 100, 100, 150),
+                    amplitudes = intArrayOf(0, 60, 0, 80)
+                )
+            }
+            "strong" -> {
+                vibratePattern(
+                    context,
+                    timings = longArrayOf(0, 200, 100, 250, 100, 400),
+                    amplitudes = intArrayOf(0, 180, 0, 220, 0, 255)
+                )
+            }
+            else -> {
+                // Standard
+                vibratePattern(
+                    context,
+                    timings = longArrayOf(0, 150, 100, 150, 100, 300),
+                    amplitudes = intArrayOf(0, 100, 0, 150, 0, 200)
+                )
+            }
+        }
     }
 
     private fun vibrate(context: Context, durationMs: Long, amplitude: Int) {

@@ -110,7 +110,12 @@ object GeminiSoundAnalyzer {
             val parts = content?.optJSONArray("parts")
             val responseText = parts?.optJSONObject(0)?.optString("text") ?: ""
 
-            val parsedJson = JSONObject(responseText)
+            val cleanedText = responseText
+                .replace("```json", "")
+                .replace("```", "")
+                .trim()
+
+            val parsedJson = JSONObject(cleanedText)
             val soundId = parsedJson.optString("recommendedSoundId", "tibetan_bowl")
             val soundName = parsedJson.optString("soundName", "Tibetan Singing Bowl")
             val patternAnalysis = parsedJson.optString("patternAnalysis", "Based on your recent focus session patterns.")

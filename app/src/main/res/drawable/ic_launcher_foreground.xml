@@ -1,25 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
     
-    <!-- Outer circle track -->
+    <!-- Outer glow accent ring -->
     <path
-        android:pathData="M 54 24 C 70.568 24 84 37.431 84 54 C 84 70.569 70.568 84 54 84 C 37.432 84 24 70.569 24 54 C 24 37.431 37.432 24 54 24 Z"
-        android:strokeWidth="4"
-        android:strokeColor="#33FFFFFF" />
-        
-    <!-- The Wedge (from top center to bottom right, 45 mins / 270 degrees) -->
-    <!-- Center is 54, 54. Radius is 30 -->
-    <!-- Start at 54, 24. Sweep clockwise to 24, 54 -->
+        android:pathData="M 54 18 C 73.882 18 90 34.118 90 54 C 90 73.882 73.882 90 54 90 C 34.118 90 18 73.882 18 54 C 18 34.118 34.118 18 54 18 Z"
+        android:strokeWidth="5"
+        android:strokeColor="#243254" />
+
+    <!-- Thin elegant neon light blue track -->
     <path
-        android:pathData="M 54 54 L 54 24 A 30 30 0 1 1 24 54 Z"
-        android:fillColor="#E34426" />
-        
-    <!-- Inner small circle -->
+        android:pathData="M 54 22 C 71.673 22 86 36.327 86 54 C 86 71.673 71.673 86 54 86 C 36.327 86 22 71.673 22 54 C 22 36.327 36.327 22 54 22 Z"
+        android:strokeWidth="1.5"
+        android:strokeColor="#38BDF8" />
+
+    <!-- The main Zen Wedge slice with Sunset Flame linear gradient -->
     <path
-        android:pathData="M 54 50 C 56.209 50 58 51.791 58 54 C 58 56.209 56.209 58 54 58 C 51.791 58 50 56.209 50 54 C 50 51.791 51.791 50 54 50 Z"
-        android:fillColor="#1A1C1E" />
+        android:pathData="M 54 54 L 54 24 A 30 30 0 1 1 24 54 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="24"
+                android:startY="24"
+                android:endX="84"
+                android:endY="84"
+                android:type="linear">
+                <item android:color="#F43F5E" android:offset="0.0"/>
+                <item android:color="#FB923C" android:offset="1.0"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+    
+    <!-- Clean Minimalist Core Center Pivot -->
+    <path
+        android:pathData="M 54 48 C 57.314 48 60 50.686 60 54 C 60 57.314 57.314 60 54 60 C 50.686 60 48 57.314 48 54 C 48 50.686 50.686 48 54 48 Z"
+        android:fillColor="#0B0F19" />
+
+    <!-- Inner glowing node dot -->
+    <path
+        android:pathData="M 54 52 C 55.105 52 56 52.895 56 54 C 56 55.105 55.105 56 54 56 C 52.895 56 52 55.105 52 54 C 52 52.895 52.895 52 54 52 Z"
+        android:fillColor="#38BDF8" />
 </vector>

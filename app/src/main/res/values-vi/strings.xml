@@ -27,20 +27,115 @@
     <string name="endsAtPrefix">Kết thúc lúc</string>
     <string name="languageSetting">Ngôn ngữ</string>
     <string name="selectLanguage">Ngôn ngữ ứng dụng</string>
-    <string name="shareAppTitle">Share ZenWedge</string>
-    <string name="shareAppDesc">Invite friends to find their focus</string>
-    <string name="rateAppTitle">Enjoying ZenWedge?</string>
-    <string name="rateAppDesc">Please leave a 5-star review to support us</string>
-    <string name="updateAppTitle">Check for Updates</string>
-    <string name="updateAppDesc">Make sure you have the latest features</string>
-    <string name="shareDialogTitle">Spread the Zen</string>
-    <string name="shareDialogBody">You\'ve been focused! Share ZenWedge with friends and help them achieve their goals.</string>
-    <string name="shareButton">Share App</string>
-    <string name="rateDialogTitle">Are you enjoying ZenWedge?</string>
-    <string name="rateDialogBody">If this app is helping you focus, please consider leaving a 5-star rating. It helps a lot!</string>
-    <string name="rateButton">Rate 5 Stars</string>
-    <string name="updateDialogTitle">Update Available</string>
-    <string name="updateDialogBody">A new version of ZenWedge is available. Update now to get the latest features and improvements.</string>
-    <string name="updateButton">Update Now</string>
-    <string name="maybeLater">Maybe Later</string>
+    <string name="shareAppTitle">Chia sẻ ZenWedge</string>
+    <string name="shareAppDesc">Mời bạn bè cùng rèn luyện khả năng tập trung</string>
+    <string name="rateAppTitle">Bạn thích ZenWedge chứ?</string>
+    <string name="rateAppDesc">Hãy đánh giá 5 sao để ủng hộ chúng tôi nhé</string>
+    <string name="updateAppTitle">Kiểm tra cập nhật</string>
+    <string name="updateAppDesc">Hãy chắc chắn rằng bạn có những tính năng mới nhất</string>
+    <string name="shareDialogTitle">Lan tỏa sự tập trung</string>
+    <string name="shareDialogBody">Bạn đã có thời gian tập trung rất tốt! Hãy chia sẻ ZenWedge với bạn bè để giúp họ hoàn thành mục tiêu.</string>
+    <string name="shareButton">Chia sẻ ứng dụng</string>
+    <string name="rateDialogTitle">Bạn thấy ZenWedge hữu ích chứ?</string>
+    <string name="rateDialogBody">Nếu ứng dụng này giúp bạn tập trung tốt hơn, xin hãy đánh giá 5 sao. Sự ủng hộ của bạn là niềm khích lệ lớn!</string>
+    <string name="rateButton">Đánh giá 5 sao</string>
+    <string name="updateDialogTitle">Đã có bản cập nhật mới</string>
+    <string name="updateDialogBody">Phiên bản mới của ZenWedge đã sẵn sàng. Hãy cập nhật ngay để trải nghiệm những tính năng và cải tiến mới nhất.</string>
+    <string name="updateButton">Cập nhật ngay</string>
+    <string name="maybeLater">Để sau</string>
+    <string name="sessionsTitle">Phiên tập trung &amp; Thống kê</string>
+    <string name="totalSessions">Phiên đã hoàn thành</string>
+    <string name="totalFocusTime">Tổng thời gian tập trung</string>
+    <string name="recentHistory">Lịch sử tập trung gần đây</string>
+    <string name="customDuration">Tùy chỉnh thời gian</string>
+    <string name="themeSelectorTitle">Chủ đề màu sắc hình nêm</string>
+
+    <!-- New theme configurations -->
+    <string name="darkThemeMode">Chế độ giao diện tối</string>
+    <string name="darkThemeModeDesc">Chuyển đổi giữa chế độ tập trung ban đêm (tối) và ban ngày (sáng)</string>
+    <string name="dynamicColorShift">Chuyển màu động (Xanh sang Đỏ)</string>
+    <string name="dynamicColorShiftDesc">Hình nêm chuyển tiếp mượt mà Xanh → Vàng → Đỏ khi thời gian giảm dần</string>
+    <string name="completionHaptic">Rung phản hồi khi hoàn thành</string>
+    <string name="completionHapticDesc">Chọn cường độ rung và nhịp điệu khi đếm ngược kết thúc</string>
+    <string name="chooseWedgePalette">Chọn bảng màu hình nêm cho tâm trạng tập trung của bạn</string>
+    <string name="completionChime">Âm thanh chuông khi hoàn thành</string>
+
+    <!-- AI advisor -->
+    <string name="aiFocusAdvisor">Trợ lý âm thanh tập trung AI</string>
+    <string name="analyze">Phân tích</string>
+    <string name="aiFocusAdvisorDesc">Gemini phân tích lịch sử và thời gian phiên tập trung để đề xuất âm thanh tối ưu nhất.</string>
+    <string name="patternInsights">Nhận định thói quen tập trung</string>
+    <string name="recommendedFormat">Đề xuất: %1$s</string>
+    <string name="selected">Đã chọn</string>
+    <string name="applySound">Áp dụng</string>
+    <string name="previewRecommendedSound">Nghe thử âm thanh được đề xuất</string>
+
+    <!-- Custom timer dialogue -->
+    <string name="editQuickPreset">Chỉnh sửa mốc nhanh</string>
+    <string name="enterDurationMinutes">Nhập thời gian bằng phút (1 - 180):</string>
+    <string name="enterValueBetween">Vui lòng nhập giá trị từ 1 đến 180</string>
+    <string name="save">Lưu</string>
+    <string name="cancel">Hủy</string>
+
+    <!-- Dashboard stats -->
+    <string name="focusSummaryDashboard">Bảng điều khiển tóm tắt tập trung</string>
+    <string name="daily">Hàng ngày</string>
+    <string name="weekly">Hàng tuần</string>
+    <string name="past4Weeks">Thời gian tập trung 4 tuần qua (Phút)</string>
+    <string name="dailyFocusBreakdown">Chi tiết tập trung hàng ngày (Phút)</string>
+    <string name="roomDbSessionLogs">Nhật ký phiên Room DB (%1$d)</string>
+    <string name="exportCsv">Xuất tệp CSV</string>
+    <string name="noSessionsLogged">Chưa có phiên nào được ghi lại. Hãy hoàn thành một phiên tập trung để lưu lại lịch sử nhé!</string>
+    <string name="kpiTotalTime">Tổng thời gian</string>
+    <string name="kpiSessions">Số phiên</string>
+    <string name="kpiAvgSession">Trung bình</string>
+    <string name="completedSuffixFormat">Đã hoàn thành %1$d</string>
+
+    <!-- Week labels -->
+    <string name="wk1">Tuần 1</string>
+    <string name="wk2">Tuần 2</string>
+    <string name="wk3">Tuần 3</string>
+    <string name="thisWk">Tuần này</string>
+
+    <!-- Day labels -->
+    <string name="mon">Thứ 2</string>
+    <string name="tue">Thứ 3</string>
+    <string name="wed">Thứ 4</string>
+    <string name="thu">Thứ 5</string>
+    <string name="fri">Thứ 6</string>
+    <string name="sat">Thứ 7</string>
+    <string name="sun">Chủ Nhật</string>
+
+    <!-- Haptic selector options -->
+    <string name="hapticMutedOption">Tắt rung</string>
+    <string name="hapticGentleOption">Rung nhẹ</string>
+    <string name="hapticStandardOption">Nhịp điệu tiêu chuẩn</string>
+    <string name="hapticStrongOption">Rung sóng mạnh</string>
+
+    <!-- Chime sound options -->
+    <string name="soundSystemAlarm">Chuông hệ thống</string>
+    <string name="soundTibetanBowl">Chuông Tây Tạng</string>
+    <string name="soundCrystalBowl">Thạch anh 528Hz</string>
+    <string name="soundSoftGong">Cồng chiêng nhẹ</string>
+    <string name="soundZenBell">Chuông thiền</string>
+    <string name="soundRaindropChime">Chuông hạt mưa</string>
+
+    <!-- Onboarding strings -->
+    <string name="onboardingWelcomeTitle">Chào mừng đến với ZenWedge</string>
+    <string name="onboardingWelcomeDesc">ZenWedge là ứng dụng đếm ngược tập trung tinh tế, giàu trải nghiệm giác quan, giúp bạn rèn luyện sự tập trung sâu sắc, không bị phân tâm.</string>
+    <string name="onboardingSlide1Feature">Điều chỉnh thời gian vật lý</string>
+    <string name="onboardingSlide1FeatureDesc">Kéo trượt hình nêm mượt mà để tùy chỉnh phiên tập trung. Trải nghiệm cơ học vật lý uyển chuyển và âm thanh tích tắc êm dịu.</string>
+    <string name="onboardingSoundsTitle">Không gian âm thanh thư thái</string>
+    <string name="onboardingSoundsDesc">Đắm mình vào những tần số âm thanh nền trung thực cao, được thiết kế để đồng bộ hóa tần số não bộ của bạn.</string>
+    <string name="onboardingSlide2Feature">Chuông trị liệu &amp; Trí tuệ nhân tạo Gemini</string>
+    <string name="onboardingSlide2FeatureDesc">Làm dịu tâm trí lúc bắt đầu và kết thúc bằng chuông Tây Tạng, chiêng nhẹ hoặc để trợ lý Gemini phân tích lịch sử tập trung để đề xuất âm thanh tối ưu nhất.</string>
+    <string name="onboardingStatsTitle">Phân tích &amp; Tùy biến sâu</string>
+    <string name="onboardingStatsDesc">Theo dõi xu hướng tập trung của bạn thông qua cơ sở dữ liệu Room DB cục bộ cùng các cài đặt cá nhân hóa giao diện toàn diện.</string>
+    <string name="onboardingSlide3Feature">Nhận định lịch sử phong phú</string>
+    <string name="onboardingSlide3FeatureDesc">Xem lại biểu đồ tập trung, xuất nhật ký định dạng CSV, và điều chỉnh thông báo khoảng thời gian, cường độ rung hoặc giao diện tối.</string>
+    <string name="onboardingNext">Tiếp theo</string>
+    <string name="onboardingBack">Quay lại</string>
+    <string name="onboardingGetStarted">Bắt đầu tập trung</string>
+
+    <string name="app_name" translatable="false">ZenWedge</string>
 </resources>

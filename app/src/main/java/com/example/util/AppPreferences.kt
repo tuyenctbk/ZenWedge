@@ -96,4 +96,61 @@ object AppPreferences {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putBoolean("has_shared", shared).apply()
     }
+
+    fun getHapticMode(context: Context): String {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getString("haptic_mode", "standard") ?: "standard"
+    }
+
+    fun setHapticMode(context: Context, mode: String) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putString("haptic_mode", mode).apply()
+    }
+
+    fun getDynamicColorShiftEnabled(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean("dynamic_color_shift", true)
+    }
+
+    fun setDynamicColorShiftEnabled(context: Context, enabled: Boolean) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putBoolean("dynamic_color_shift", enabled).apply()
+    }
+
+    fun isDarkMode(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean("is_dark_mode", true)
+    }
+
+    fun setDarkMode(context: Context, isDark: Boolean) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putBoolean("is_dark_mode", isDark).apply()
+    }
+
+    fun getQuickPresets(context: Context): List<Int> {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val str = prefs.getString("quick_presets", "5,10,15,25,45,60") ?: "5,10,15,25,45,60"
+        return try {
+            str.split(",").map { it.trim().toInt() }
+        } catch (e: Exception) {
+            listOf(5, 10, 15, 25, 45, 60)
+        }
+    }
+
+    fun setQuickPresets(context: Context, presets: List<Int>) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val str = presets.joinToString(",")
+        prefs.edit().putString("quick_presets", str).apply()
+    }
+
+    fun isOnboardingCompleted(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean("onboarding_completed", false)
+    }
+
+    fun setOnboardingCompleted(context: Context, completed: Boolean) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putBoolean("onboarding_completed", completed).apply()
+    }
 }
+

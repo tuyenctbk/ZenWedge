@@ -6,13 +6,36 @@ import android.util.Log
 import com.google.firebase.FirebaseApp
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.google.firebase.perf.FirebasePerformance
+import com.google.firebase.perf.metrics.Trace
 
 /**
- * Universal Tracker providing Screen Tracking, Event Tracking, and Crashlytics Error Reporting.
+ * Universal Tracker providing Screen Tracking, Event Tracking, Performance Tracing, and Crashlytics Error Reporting.
  * Uses Firebase free-tier services (100% no-cost unlimited Analytics & Crashlytics).
  */
 object AnalyticsTracker {
     private const val TAG = "AnalyticsTracker"
+    private val activeTraces = HashMap<String, Trace>()
+
+    fun startTrace(traceName: String) {
+        Log.d(TAG, "[Performance Trace Start] $traceName")
+        try {
+            val trace = FirebasePerformance.getInstance().newTrace(traceName)
+            trace.start()
+            activeTraces[traceName] = trace
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to start performance trace: $traceName", e)
+        }
+    }
+
+    fun stopTrace(traceName: String) {
+        Log.d(TAG, "[Performance Trace Stop] $traceName")
+        try {
+            activeTraces.remove(traceName)?.stop()
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to stop performance trace: $traceName", e)
+        }
+    }
 
     private fun isFirebaseAvailable(context: Context): Boolean {
         return try {
