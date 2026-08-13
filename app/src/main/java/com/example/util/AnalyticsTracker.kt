@@ -9,13 +9,15 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.perf.FirebasePerformance
 import com.google.firebase.perf.metrics.Trace
 
+import java.util.concurrent.ConcurrentHashMap
+
 /**
  * Universal Tracker providing Screen Tracking, Event Tracking, Performance Tracing, and Crashlytics Error Reporting.
  * Uses Firebase free-tier services (100% no-cost unlimited Analytics & Crashlytics).
  */
 object AnalyticsTracker {
     private const val TAG = "AnalyticsTracker"
-    private val activeTraces = HashMap<String, Trace>()
+    private val activeTraces = ConcurrentHashMap<String, Trace>()
 
     fun startTrace(traceName: String) {
         Log.d(TAG, "[Performance Trace Start] $traceName")

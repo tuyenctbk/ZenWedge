@@ -545,7 +545,7 @@ fun SessionLogRow(
                         )
                     )
                     Text(
-                        text = "${session.timeOfDay} • ${session.soundId.replace('_', ' ').capitalize(Locale.ROOT)}",
+                        text = "${session.timeOfDay} • ${session.soundId.replace('_', ' ').replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }}",
                         style = MaterialTheme.typography.labelSmall.copy(
                             color = theme.getSecondaryTextColor(isDarkMode),
                             fontSize = 10.sp

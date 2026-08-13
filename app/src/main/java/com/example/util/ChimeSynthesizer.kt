@@ -15,6 +15,7 @@ object ChimeSynthesizer {
     @Volatile
     private var currentTrack: AudioTrack? = null
 
+    @Synchronized
     fun stop() {
         try {
             currentTrack?.let { track ->
