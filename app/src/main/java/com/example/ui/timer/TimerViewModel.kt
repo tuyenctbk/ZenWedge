@@ -203,7 +203,6 @@ class TimerViewModel : ViewModel() {
             )
         }
         
-        timerJob?.cancel()
         timerJob = viewModelScope.launch {
             while (_timerState.value == TimerState.RUNNING) {
                 delay(200)
@@ -213,7 +212,7 @@ class TimerViewModel : ViewModel() {
                     val prevSeconds = _remainingSeconds.value
                     val nextSeconds = (prevSeconds - deltaSec).coerceAtLeast(0)
                     _remainingSeconds.value = nextSeconds
-                    lastTickTime += deltaSec * 1000L
+                    lastTickTime = now
 
                     val hapticInterval = _intervalHapticMinutes.value
                     if (hapticInterval > 0) {

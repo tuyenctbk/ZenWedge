@@ -9,8 +9,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.HourglassTop
 import androidx.compose.material.icons.filled.Leaderboard
@@ -232,7 +232,7 @@ fun OnboardingScreen(
                         contentPadding = PaddingValues(horizontal = 16.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            imageVector = Icons.Default.ArrowBack,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp)
                         )
@@ -308,7 +308,7 @@ fun OnboardingScreen(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                            imageVector = Icons.Default.ArrowForward,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp)
                         )

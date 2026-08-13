@@ -10,7 +10,6 @@ import android.os.Looper
 object AlarmPlayer {
     private var mediaPlayer: MediaPlayer? = null
     private val handler = Handler(Looper.getMainLooper())
-    private var pendingStopRunnable: Runnable? = null
 
     fun playCompletionAlarm(context: Context, durationMs: Long = 4000L) {
         try {
@@ -21,7 +20,7 @@ object AlarmPlayer {
 
             if (alarmUri != null) {
                 mediaPlayer = MediaPlayer().apply {
-                    setDataSource(context.applicationContext, alarmUri)
+                    setDataSource(context, alarmUri)
                     setAudioAttributes(
                         AudioAttributes.Builder()
                             .setUsage(AudioAttributes.USAGE_ALARM)
@@ -34,9 +33,9 @@ object AlarmPlayer {
                 }
 
                 // Auto stop after durationMs so alarm doesn't ring endlessly
-                val runnable = Runnable { stop() }
-                pendingStopRunnable = runnable
-                handler.postDelayed(runnable, durationMs)
+                handler.postDelayed({
+                    stop()
+                }, durationMs)
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -45,10 +44,7 @@ object AlarmPlayer {
 
     fun stop() {
         try {
-            pendingStopRunnable?.let {
-                handler.removeCallbacks(it)
-                pendingStopRunnable = null
-            }
+            handler.removeCallbacksAndMessages(null)
             mediaPlayer?.let {
                 if (it.isPlaying) {
                     it.stop()

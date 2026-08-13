@@ -1,6 +1,5 @@
 package com.example.ui.timer
 
-import android.content.ContextWrapper
 import android.app.Activity
 import android.view.WindowManager
 import androidx.compose.animation.animateColorAsState
@@ -68,15 +67,6 @@ import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
-
-private fun android.content.Context.findActivity(): Activity? {
-    var ctx = this
-    while (ctx is ContextWrapper) {
-        if (ctx is Activity) return ctx
-        ctx = ctx.baseContext
-    }
-    return null
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -146,13 +136,13 @@ fun ZenWedgeScreen(
 
         // Keep screen on management via DisposableEffect to guarantee cleanup
         DisposableEffect(isKeepScreenOn, timerState) {
-            val activity = context.findActivity()
+            val activity = context as? Activity
             val shouldKeepOn = isKeepScreenOn && timerState == TimerState.RUNNING
             if (activity != null && shouldKeepOn) {
                 activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             }
             onDispose {
-                context.findActivity()?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                (context as? Activity)?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             }
         }
 

@@ -1,6 +1,4 @@
 import com.google.gms.googleservices.GoogleServicesPlugin.MissingGoogleServicesStrategy
-import java.io.FileInputStream
-import java.util.Properties
 
 plugins {
   alias(libs.plugins.android.application)
@@ -26,25 +24,16 @@ android {
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 
-  val localProperties = Properties().apply {
-    val localPropertiesFile = rootProject.file("local.properties")
-    if (localPropertiesFile.exists()) {
-      FileInputStream(localPropertiesFile).use { load(it) }
-    }
-  }
-
   signingConfigs {
     create("release") {
-      val storeFileName = localProperties.getProperty("RELEASE_STORE_FILE") ?: "common_release_key.jks"
-      storeFile = rootProject.file(storeFileName)
-      storePassword = localProperties.getProperty("RELEASE_STORE_PASSWORD") ?: System.getenv("STORE_PASSWORD") ?: "dpadhero123"
-      keyAlias = localProperties.getProperty("RELEASE_KEY_ALIAS") ?: "dpad_hero_alias"
-      keyPassword = localProperties.getProperty("RELEASE_KEY_PASSWORD") ?: System.getenv("KEY_PASSWORD") ?: "dpadhero123"
+      val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
+      storeFile = file(keystorePath)
+      storePassword = System.getenv("STORE_PASSWORD")
+      keyAlias = "upload"
+      keyPassword = System.getenv("KEY_PASSWORD")
     }
     create("debugConfig") {
-      val localDebugKeystore = file("${rootDir}/debug.keystore")
-      val defaultDebugKeystore = file("${System.getProperty("user.home")}/.android/debug.keystore")
-      storeFile = if (localDebugKeystore.exists()) localDebugKeystore else defaultDebugKeystore
+      storeFile = file("${rootDir}/debug.keystore")
       storePassword = "android"
       keyAlias = "androiddebugkey"
       keyPassword = "android"
@@ -54,8 +43,7 @@ android {
   buildTypes {
     release {
       isCrunchPngs = false
-      isMinifyEnabled = true
-      isShrinkResources = true
+      isMinifyEnabled = false
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       signingConfig = signingConfigs.getByName("release")
     }
